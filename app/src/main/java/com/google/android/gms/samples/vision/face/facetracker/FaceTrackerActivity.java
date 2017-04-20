@@ -30,6 +30,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -39,6 +40,7 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.samples.vision.face.facetracker.ui.camera.CameraSourcePreview;
 import com.google.android.gms.samples.vision.face.facetracker.ui.camera.GraphicOverlay;
 import com.google.android.gms.vision.CameraSource;
+import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.MultiProcessor;
 import com.google.android.gms.vision.Tracker;
 import com.google.android.gms.vision.face.Face;
@@ -68,20 +70,13 @@ public final class FaceTrackerActivity extends AppCompatActivity {
 
 
     private int mode = 0; // 0: review the picture; 1: back to take picture
-
-    public static final int MAX_FACES = 2;
-
-    private MaskCameraSurfaceView mCameraSurface;
+    private int cameraButtonMode = 0;
     private MaskedImageView mImageView;
-    private MaskedImageView mCopiedImageView;
-
     private Button mCameraButton;
     private Bitmap mImage;
-    private Bitmap mCopiedImage;
+    private Button left;
+    private Button right;
 
-
-    private Button lucky;
-    private Button change;
 
 
     /**
@@ -95,8 +90,12 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         mPreview = (CameraSourcePreview) findViewById(R.id.preview);
         mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
 
-        lucky = (Button) findViewById(R.id.lucky);
-        change = (Button) findViewById(R.id.change);
+        mCameraButton = (Button) findViewById(R.id.cameraButton);
+        left = (Button) findViewById(R.id.left);
+        right = (Button) findViewById(R.id.right);
+
+        right.setVisibility(View.GONE);
+        left.setVisibility(View.GONE);
 
         mImageView = new MaskedImageView(getApplicationContext());
         mImageView.setScaleType(ImageView.ScaleType.FIT_XY);
@@ -145,32 +144,85 @@ public final class FaceTrackerActivity extends AppCompatActivity {
     }
 
     public void cameraButtonOnClick(View v) {
-        mCameraSource.takePicture(null, new CameraSource.PictureCallback() {
-            @Override
-            public void onPictureTaken(byte[] data) {
-                final Bitmap snapShot = rotateImage(BitmapFactory.decodeByteArray(data, 0, data.length));
-                mImage = snapShot.copy(Bitmap.Config.RGB_565, false);
-                mImageView.setImageBitmap(mImage);
-            }
-        });
+        if(cameraButtonMode == 0) {
+            left= (Button) findViewById(R.id.left);
+            left.setVisibility(View.VISIBLE);
+
+            mCameraSource.takePicture(null, new CameraSource.PictureCallback() {
+                @Override
+                public void onPictureTaken(byte[] data) {
+                    final Bitmap snapShot = rotateImage(BitmapFactory.decodeByteArray(data, 0, data.length));
+                    mImage = snapShot.copy(Bitmap.Config.RGB_565, false);
+                    mImageView.setImageBitmap(mImage);
+                }
+            });
+        }
+        else{
+            mImageView.mode = 1;
+            goToChange(captureFaces(mImage));
+        }
+    }
+
+    public void lucky(View v){
+        mImageView.mode = 0;
+        goToChange(captureFaces(mImage));
+    }
+
+    private SparseArray<Face> captureFaces(Bitmap inputImage){
+        FaceDetector detector = new FaceDetector.Builder(getApplicationContext())
+                .setTrackingEnabled(false)
+                .setLandmarkType(FaceDetector.ALL_LANDMARKS)
+                .setMode(FaceDetector.FAST_MODE)
+                .build();
+
+        Frame frame = new Frame.Builder().setBitmap(inputImage).build();
+        SparseArray<Face> faces = detector.detect(frame);
+
+        int numOfFaces = faces.size();
+        Log.i("NumberOfFaces", String.valueOf(numOfFaces));
+        return faces;
     }
 
     public void preview(View v){
         if(mode == 0) {
-            lucky = (Button) findViewById(R.id.lucky);
+            left = (Button) findViewById(R.id.left);
+            right = (Button) findViewById(R.id.right);
+            mCameraButton = (Button) findViewById(R.id.cameraButton);
+            mCameraButton.setText("Mask!");
             mPreview.addView(mImageView);
             mImageView.invalidate();
             mPreview.bringChildToFront(mImageView);
-            lucky.setText("Back");
+            left.setText("Back");
             mode = 1;
+            cameraButtonMode = 1;
+            right.setVisibility(View.VISIBLE);
         }
         else{
-            lucky = (Button) findViewById(R.id.lucky);
+            left = (Button) findViewById(R.id.left);
+            right = (Button) findViewById(R.id.right);
             mPreview.removeView(mImageView);
-            lucky.setText("Preview");
+            left.setText("Preview");
+            mCameraButton = (Button) findViewById(R.id.cameraButton);
+            mCameraButton.setText("Take Picture!");
+            cameraButtonMode = 0;
             mode = 0;
+            right.setVisibility(View.GONE);
         }
     }
+
+    public void goToChange(SparseArray<Face> faces){
+        int numOfFaces = faces.size();
+
+        if(numOfFaces > 0){
+            mImageView.maskFaces(faces, numOfFaces, mImage.getWidth(), mImage.getHeight(), mImage);
+            mImageView.invalidate();
+            //mCameraSurface.maskFaces();
+        } else{
+            mImageView.noFaces();
+        }
+    }
+
+
 
     private Bitmap rotateImage(Bitmap image) {      //used in takePicture function
         final Matrix matrix = new Matrix();

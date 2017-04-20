@@ -1,19 +1,23 @@
 package com.google.android.gms.samples.vision.face.facetracker;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PointF;
-import android.media.FaceDetector;
+import android.graphics.Rect;
 import android.util.Log;
-import android.widget.ImageView;
+import android.util.SparseArray;
 
-public class MaskedImageView extends ImageView {
-    FaceDetector.Face[] faces = null;
+import com.google.android.gms.vision.face.Face;
+import com.google.android.gms.vision.face.Landmark;
+
+public class MaskedImageView extends android.support.v7.widget.AppCompatImageView {
+    SparseArray<Face> faces = null;
     int imageWidth;
     int imageHeight;
     public int mode;
+    private Bitmap mBitmap;
 
     public MaskedImageView(Context context) {
         super(context);
@@ -23,70 +27,84 @@ public class MaskedImageView extends ImageView {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        final float scaleX = (float) canvas.getWidth() / (float) imageWidth;
-        final float scaleY = (float) canvas.getHeight() / (float) imageHeight;
-        final float transX = ((float) canvas.getWidth() - scaleX * imageWidth) / 2f;
-        final float transY = ((float) canvas.getHeight() - scaleY * imageHeight) / 2f;
+
 
         if (faces != null) {
-
-            for(int i = 0; i < faces.length; i++) {
-                Log.i("length", String.valueOf(faces.length));
-                Log.i("The ith", String.valueOf(i));
-                final PointF midpoint = new PointF();
-                faces[i].getMidPoint(midpoint);
-                final float x = scaleX * midpoint.x + transX;
-                final float y = scaleY * midpoint.y + transY;
-                final float faceSize = scaleX * faces[i].eyesDistance();
-
-                if(mode == 1)
-                    drawMask(x, y, faceSize, canvas);
-                else if(mode == 2)
-                    changeMask(x, y, faceSize, canvas);
-                else
-                    blue(x, y, faceSize, canvas);
+            double scale = drawBitmap(canvas);
+            if(mode == 0) {
+                drawFaceLandmarks(canvas, scale);
+            }else {
+                drawFaceBox(canvas, scale);
             }
         } else {
             Log.i("ImageFaces", "no faces");
         }
     }
 
-    private void blue(final float x, final float y, final float faceSize, final Canvas canvas){
-        Paint paint = new Paint();
-        paint.setColor(Color.BLUE);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(5);
+    private double drawBitmap(Canvas canvas) {
+        double viewWidth = canvas.getWidth();
+        double viewHeight = canvas.getHeight();
+        double imageWidth = mBitmap.getWidth();
+        double imageHeight = mBitmap.getHeight();
+        double scale = Math.min(viewWidth / imageWidth, viewHeight / imageHeight);
 
-        canvas.drawCircle(x, y, faceSize, paint);
+        Rect destBounds = new Rect(0, 0, (int)(imageWidth * scale), (int)(imageHeight * scale));
+        canvas.drawBitmap(mBitmap, null, destBounds, null);
+        return scale;
     }
 
-    private void changeMask(final float x, final float y, final float faceSize, final Canvas canvas){
-        Paint paint = new Paint();
-        paint.setColor(Color.RED);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(5);
-
-        canvas.drawCircle(x, y, faceSize, paint);
-    }
-
-    private void drawMask(final float x, final float y, final float faceSize, final Canvas canvas) {
-        /* your code here: draw a mask over the image */
+    private void drawFaceBox(Canvas canvas, double scale) {
+        //This should be defined as a member variable rather than
+        //being created on each onDraw request, but left here for
+        //emphasis.
         Paint paint = new Paint();
         paint.setColor(Color.GREEN);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(5);
 
-        canvas.drawCircle(x, y, faceSize, paint);
+        float left = 0;
+        float top = 0;
+        float right = 0;
+        float bottom = 0;
 
+        for( int i = 0; i < faces.size(); i++ ) {
+            Face face = faces.valueAt(i);
+
+            left = (float) ( face.getPosition().x * scale );
+            top = (float) ( face.getPosition().y * scale );
+            right = (float) scale * ( face.getPosition().x + face.getWidth() );
+            bottom = (float) scale * ( face.getPosition().y + face.getHeight() );
+
+            canvas.drawRect( left, top, right, bottom, paint );
+        }
     }
 
-    public void maskFaces(FaceDetector.Face[] faces, int count, int width, int height) {
+    private void drawFaceLandmarks( Canvas canvas, double scale ) {
+        Paint paint = new Paint();
+        paint.setColor( Color.GREEN );
+        paint.setStyle( Paint.Style.STROKE );
+        paint.setStrokeWidth( 5 );
+
+        for( int i = 0; i < faces.size(); i++ ) {
+            Face face = faces.valueAt(i);
+
+            for ( Landmark landmark : face.getLandmarks() ) {
+                int cx = (int) ( landmark.getPosition().x * scale );
+                int cy = (int) ( landmark.getPosition().y * scale );
+                canvas.drawCircle( cx, cy, 10, paint );
+            }
+
+        }
+    }
+
+    public void maskFaces(SparseArray<Face> faces, int count, int width, int height, Bitmap mImage) {
         imageWidth = width;
         imageHeight = height;
 
-        this.faces = new FaceDetector.Face[count];
-
-        System.arraycopy(faces, 0, this.faces, 0, count);
+        this.faces = new SparseArray<Face>(count);
+        this.faces = faces;
+        //System.arraycopy(faces, 0, this.faces, 0, count);
+        mBitmap = mImage;
     }
 
     public void noFaces() {

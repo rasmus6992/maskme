@@ -63,35 +63,4 @@ public class MaskCameraSurfaceView extends SurfaceView implements SurfaceHolder.
             mCamera = null;
         }
     }
-
-
-    public void capture(final Camera.PictureCallback imageHandler) {
-        /* your code here: take picture with camera and call the passed imageHandler */
-
-        mCamera.takePicture(null, null, imageHandler);
-
-    }
-
-
-
-    public void startPreview() {
-        /* your code here: start preview of camera */
-        mHolder.setType(mHolder.SURFACE_TYPE_PUSH_BUFFERS);
-        mCamera.startPreview();
-    }
-
-    public int getCurrentRotation() {
-        /* your code here: get the current rotation */
-
-
-        return mRotation;
-    }
-
-    public void stopCamera() {
-        if (mCamera != null) {
-            mCamera.stopPreview();
-            mCamera.release();
-            mCamera = null;
-        }
-    }
 }

@@ -51,23 +51,23 @@
     </FrameLayout>
 
     <Button
-        android:id="@+id/lucky"
+        android:id="@+id/left"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="preview"
-        android:text="Preview"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:onClick="preview"
+        android:text="Preview" />
 
     <Button
-        android:id="@+id/change"
+        android:id="@+id/right"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
         android:onClick="lucky"
-        android:text="Lucky!" />
+        android:text="Lucky!"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
 
 </RelativeLayout>
