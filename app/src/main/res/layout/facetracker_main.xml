@@ -4,22 +4,21 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    tools:context=".FaceTrackerActivity">
+    tools:context="edu.ucsb.ece.ece150.maskme.FaceTrackerActivity">
 
     <Button
-        android:id="@+id/cameraButton"
+        android:id="@+id/camera_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:onClick="cameraButtonOnClick"
         android:text="Take Picture" />
 
     <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/cameraDisplay"
-        android:layout_above="@+id/cameraButton"
+        android:layout_above="@+id/camera_button"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
@@ -28,7 +27,7 @@
         android:layout_gravity="center">
     
     
-        <com.google.android.gms.samples.vision.face.facetracker.ui.camera.CameraSourcePreview
+        <edu.ucsb.ece.ece150.maskme.camera.CameraSourcePreview
             android:id="@+id/preview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -37,7 +36,7 @@
             android:layout_alignParentTop="true"
             android:layout_alignWithParentIfMissing="true">
         
-            <com.google.android.gms.samples.vision.face.facetracker.ui.camera.GraphicOverlay
+            <edu.ucsb.ece.ece150.maskme.camera.GraphicOverlay
                 android:id="@+id/faceOverlay"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
@@ -46,25 +45,23 @@
                 android:layout_alignParentTop="true"
                 android:layout_alignWithParentIfMissing="true" />
         
-        </com.google.android.gms.samples.vision.face.facetracker.ui.camera.CameraSourcePreview>
+        </edu.ucsb.ece.ece150.maskme.camera.CameraSourcePreview>
     
     </FrameLayout>
 
     <Button
-        android:id="@+id/left"
+        android:id="@+id/left_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:onClick="preview"
         android:text="Preview" />
 
     <Button
-        android:id="@+id/right"
+        android:id="@+id/right_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="lucky"
         android:text="Lucky!"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"

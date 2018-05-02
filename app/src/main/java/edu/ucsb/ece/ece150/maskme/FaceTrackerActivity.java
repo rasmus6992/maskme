@@ -1,30 +1,12 @@
-/*
- * Copyright (C) The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package com.google.android.gms.samples.vision.face.facetracker;
+package edu.ucsb.ece.ece150.maskme;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -37,8 +19,8 @@ import android.widget.ImageView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.samples.vision.face.facetracker.ui.camera.CameraSourcePreview;
-import com.google.android.gms.samples.vision.face.facetracker.ui.camera.GraphicOverlay;
+import edu.ucsb.ece.ece150.maskme.camera.CameraSourcePreview;
+import edu.ucsb.ece.ece150.maskme.camera.GraphicOverlay;
 import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.MultiProcessor;
@@ -64,20 +46,24 @@ public final class FaceTrackerActivity extends AppCompatActivity {
     // permission request codes need to be < 256
     private static final int RC_HANDLE_CAMERA_PERM = 2;
 
+    private enum ButtonsMode {
+        PREVIEW_TAKEPICTURE_INVISIBLE, BACK_MASK_LUCKY
+    }
+
+    SparseArray<Face> mFaces = new SparseArray<>();
+
+    private ButtonsMode buttonsMode = ButtonsMode.PREVIEW_TAKEPICTURE_INVISIBLE;
+    private MaskedImageView mImageView;
+    private Button mCameraButton;
+    private Bitmap mCapturedImage;
+    private Button mLeftButton;
+    private Button mRightButton;
+
+    private FaceDetector mStaticFaceDetector;
+
     //==============================================================================================
     // Activity Methods
     //==============================================================================================
-
-
-    private int mode = 0; // 0: review the picture; 1: back to take picture
-    private int cameraButtonMode = 0;
-    private MaskedImageView mImageView;
-    private Button mCameraButton;
-    private Bitmap mImage;
-    private Button left;
-    private Button right;
-
-
 
     /**
      * Initializes the UI and initiates the creation of a face detector.
@@ -90,26 +76,93 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         mPreview = (CameraSourcePreview) findViewById(R.id.preview);
         mGraphicOverlay = (GraphicOverlay) findViewById(R.id.faceOverlay);
 
-        mCameraButton = (Button) findViewById(R.id.cameraButton);
-        left = (Button) findViewById(R.id.left);
-        right = (Button) findViewById(R.id.right);
+        mCameraButton = (Button) findViewById(R.id.camera_button);
+        mCameraButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(buttonsMode == ButtonsMode.PREVIEW_TAKEPICTURE_INVISIBLE) {
+                    mLeftButton.setVisibility(View.VISIBLE);
+                    if(mCameraSource != null){
+                        mCameraSource.takePicture(null, new CameraSource.PictureCallback() {
+                            @Override
+                            public void onPictureTaken(byte[] data) {
+                                mCapturedImage = BitmapFactory.decodeByteArray(data, 0, data.length);
+                                mImageView.setImageBitmap(mCapturedImage);
+                            }
+                        });
+                    }
+                }
+                else{
+                    if(mFaces.size() == 0) {
+                        detectStaticFaces(mCapturedImage);
+                    }
+                    mImageView.drawFirstMask(mFaces);
+                }
+            }
+        });
 
-        right.setVisibility(View.GONE);
-        left.setVisibility(View.GONE);
+        mLeftButton = (Button) findViewById(R.id.left_button);
+        mRightButton = (Button) findViewById(R.id.right_button);
+
+        mLeftButton.setVisibility(View.GONE);
+        mRightButton.setVisibility(View.GONE);
+
+        mLeftButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(buttonsMode == ButtonsMode.PREVIEW_TAKEPICTURE_INVISIBLE) {
+                    mImageView.setImageBitmap(mCapturedImage);
+                    mPreview.addView(mImageView);
+                    mPreview.bringChildToFront(mImageView);
+                    mLeftButton.setText("Back");
+                    mCameraButton.setText("Mask!");
+                    mRightButton.setVisibility(View.VISIBLE);
+                    buttonsMode = ButtonsMode.BACK_MASK_LUCKY;
+                }
+                else{
+                    mPreview.removeView(mImageView);
+                    mLeftButton.setText("Preview");
+                    mCameraButton.setText("Take Picture!");
+                    mRightButton.setVisibility(View.GONE);
+                    mFaces.clear();
+                    buttonsMode = ButtonsMode.PREVIEW_TAKEPICTURE_INVISIBLE;
+                }
+            }
+        });
+
+        mRightButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(mFaces.size() == 0) {
+                    detectStaticFaces(mCapturedImage);
+                }
+                mImageView.drawSecondMask(mFaces);
+            }
+        });
 
         mImageView = new MaskedImageView(getApplicationContext());
         mImageView.setScaleType(ImageView.ScaleType.FIT_XY);
 
         // Check for the camera permission before accessing the camera.  If the
         // permission is not granted yet, request permission.
-        int rc = ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
-        if (rc == PackageManager.PERMISSION_GRANTED) {
+        int permissionGranted = ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
+        if (permissionGranted == PackageManager.PERMISSION_GRANTED) {
             createCameraSource();
         } else {
             requestCameraPermission();
         }
     }
 
+    private void detectStaticFaces(Bitmap inputImage){
+        if(inputImage == null){
+            return;
+        }
+
+        Frame frame = new Frame.Builder().setBitmap(inputImage).build();
+        mFaces = mStaticFaceDetector.detect(frame);
+
+        Log.i("NumberOfFaces", String.valueOf(mFaces.size()));
+    }
 
     /**
      * Handles the requesting of the camera permission.  This includes
@@ -143,95 +196,6 @@ public final class FaceTrackerActivity extends AppCompatActivity {
                 .show();
     }
 
-    public void cameraButtonOnClick(View v) {
-        if(cameraButtonMode == 0) {
-            left= (Button) findViewById(R.id.left);
-            left.setVisibility(View.VISIBLE);
-
-            mCameraSource.takePicture(null, new CameraSource.PictureCallback() {
-                @Override
-                public void onPictureTaken(byte[] data) {
-                    final Bitmap snapShot = rotateImage(BitmapFactory.decodeByteArray(data, 0, data.length));
-                    mImage = snapShot.copy(Bitmap.Config.RGB_565, false);
-                    mImageView.setImageBitmap(mImage);
-                }
-            });
-        }
-        else{
-            mImageView.mode = 1;
-            goToChange(captureFaces(mImage));
-        }
-    }
-
-    public void lucky(View v){
-        mImageView.mode = 0;
-        goToChange(captureFaces(mImage));
-    }
-
-    private SparseArray<Face> captureFaces(Bitmap inputImage){
-        FaceDetector detector = new FaceDetector.Builder(getApplicationContext())
-                .setTrackingEnabled(false)
-                .setLandmarkType(FaceDetector.ALL_LANDMARKS)
-                .setMode(FaceDetector.FAST_MODE)
-                .build();
-
-        Frame frame = new Frame.Builder().setBitmap(inputImage).build();
-        SparseArray<Face> faces = detector.detect(frame);
-
-        int numOfFaces = faces.size();
-        Log.i("NumberOfFaces", String.valueOf(numOfFaces));
-        return faces;
-    }
-
-    public void preview(View v){
-        if(mode == 0) {
-            left = (Button) findViewById(R.id.left);
-            right = (Button) findViewById(R.id.right);
-            mCameraButton = (Button) findViewById(R.id.cameraButton);
-            mCameraButton.setText("Mask!");
-            mPreview.addView(mImageView);
-            mImageView.invalidate();
-            mPreview.bringChildToFront(mImageView);
-            left.setText("Back");
-            mode = 1;
-            cameraButtonMode = 1;
-            right.setVisibility(View.VISIBLE);
-        }
-        else{
-            left = (Button) findViewById(R.id.left);
-            right = (Button) findViewById(R.id.right);
-            mPreview.removeView(mImageView);
-            left.setText("Preview");
-            mCameraButton = (Button) findViewById(R.id.cameraButton);
-            mCameraButton.setText("Take Picture!");
-            cameraButtonMode = 0;
-            mode = 0;
-            right.setVisibility(View.GONE);
-        }
-    }
-
-    public void goToChange(SparseArray<Face> faces){
-        int numOfFaces = faces.size();
-
-        if(numOfFaces > 0){
-            mImageView.maskFaces(faces, numOfFaces, mImage.getWidth(), mImage.getHeight(), mImage);
-            mImageView.invalidate();
-            //mCameraSurface.maskFaces();
-        } else{
-            mImageView.noFaces();
-        }
-    }
-
-
-
-    private Bitmap rotateImage(Bitmap image) {      //used in takePicture function
-        final Matrix matrix = new Matrix();
-
-        matrix.postTranslate(0f - image.getWidth()/2, 0f - image.getHeight()/2);
-        matrix.postRotate(mPreview.getRotation());
-        matrix.postTranslate(image.getWidth() / 2, image.getHeight() / 2);
-        return Bitmap.createBitmap(image,0, 0, image.getWidth(), image.getHeight(), matrix, false);
-    }
     /**
      * Creates and starts the camera.  Note that this uses a higher resolution in comparison
      * to other detection examples to enable the barcode detector to detect small barcodes
@@ -239,32 +203,27 @@ public final class FaceTrackerActivity extends AppCompatActivity {
      */
     private void createCameraSource() {
 
-        Context context = getApplicationContext();
-        FaceDetector detector = new FaceDetector.Builder(context)
-                .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
-                .build();
+        // TODO: Create a face detector for real time face detection
+        // 1. Get the application's context
+        //
+        // 2. Create a FaceDetector object for real time detection
+        //    Ref: https://developers.google.com/vision/android/face-tracker-tutorial
+        //
+        // 3. Create a FaceDetector object for detecting faces on a static photo
+        //
+        // 4. Create a GraphicFaceTrackerFactory
+        //
+        // 5. Pass the GraphicFaceTrackerFactory to
+        //    a MultiProcessor.Builder to create a MultiProcessor
+        //
+        // 6. Associate the MultiProcessor with the real time detector
+        //
+        // 7. Check if the real time detector is operational
+        //
+        // 8. Create a camera source to capture video images from the camera,
+        //    and continuously stream those images into the detector and
+        //    its associated MultiProcessor
 
-        detector.setProcessor(
-                new MultiProcessor.Builder<>(new GraphicFaceTrackerFactory())
-                        .build());
-
-        if (!detector.isOperational()) {
-            // Note: The first time that an app using face API is installed on a device, GMS will
-            // download a native library to the device in order to do detection.  Usually this
-            // completes before the app is run for the first time.  But if that download has not yet
-            // completed, then the above call will not detect any faces.
-            //
-            // isOperational() can be used to check if the required native library is currently
-            // available.  The detector will automatically become operational once the library
-            // download completes on device.
-            Log.w(TAG, "Face detector dependencies are not yet available.");
-        }
-
-        mCameraSource = new CameraSource.Builder(context, detector)
-                .setRequestedPreviewSize(640, 480)
-                .setFacing(CameraSource.CAMERA_FACING_BACK)
-                .setRequestedFps(30.0f)
-                .build();
     }
 
     /**
@@ -332,17 +291,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         Log.e(TAG, "Permission not granted: results len = " + grantResults.length +
                 " Result code = " + (grantResults.length > 0 ? grantResults[0] : "(empty)"));
 
-        DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                finish();
-            }
-        };
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Face Tracker sample")
-                .setMessage(R.string.no_camera_permission)
-                .setPositiveButton(R.string.ok, listener)
-                .show();
+        finish();
     }
 
     //==============================================================================================
