@@ -5,8 +5,10 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -29,6 +31,7 @@ import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Activity for the face tracker app.  This app detects faces with the rear facing camera, and draws
@@ -87,6 +90,11 @@ public final class FaceTrackerActivity extends AppCompatActivity {
                             @Override
                             public void onPictureTaken(byte[] data) {
                                 mCapturedImage = BitmapFactory.decodeByteArray(data, 0, data.length);
+                                // check orientation, if it's portrait, rotate the image
+                                int orientation = getResources().getConfiguration().orientation;
+                                if (orientation == Configuration.ORIENTATION_PORTRAIT){
+                                    rotateImage();
+                                }
                                 mImageView.setImageBitmap(mCapturedImage);
                             }
                         });
@@ -153,6 +161,14 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         }
     }
 
+    // rotate the image by angle
+    private void rotateImage(){
+        Matrix matrix = new Matrix();
+        matrix.postRotate(90);
+        mCapturedImage = Bitmap.createBitmap(mCapturedImage, 0, 0, mCapturedImage.getWidth(), mCapturedImage.getHeight(),
+                matrix, true);
+    }
+
     private void detectStaticFaces(Bitmap inputImage){
         if(inputImage == null){
             return;
@@ -209,7 +225,8 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         //
         // 2. Create a FaceDetector object for real time detection
         //    Ref: https://developers.google.com/vision/android/face-tracker-tutorial
-        FaceDetector realTimedetector = new FaceDetector.Builder(context)
+        FaceDetector realTimeDetector = new FaceDetector.Builder(context)
+                .setTrackingEnabled(true)
                 .build();
         //
         // 3. Create a FaceDetector object for detecting faces on a static photo
@@ -226,17 +243,17 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         MultiProcessor<Face> multiProcessor = new MultiProcessor.Builder<>(graphicFaceTrackerFactory).build();
         //
         // 6. Associate the MultiProcessor with the real time detector
-        realTimedetector.setProcessor(multiProcessor);
+        realTimeDetector.setProcessor(multiProcessor);
         //
         // 7. Check if the real time detector is operational
-        if (!realTimedetector.isOperational()) {
+        if (!realTimeDetector.isOperational()) {
             Log.w(TAG, "still downloading face api");
         }
         //
         // 8. Create a camera source to capture video images from the camera,
         //    and continuously stream those images into the detector and
         //    its associated MultiProcessor
-        mCameraSource = new CameraSource.Builder(context, realTimedetector)
+        mCameraSource = new CameraSource.Builder(context, realTimeDetector)
                 .setRequestedPreviewSize(640, 480)
                 .setFacing(CameraSource.CAMERA_FACING_BACK)
                 .setRequestedFps(30.0f)

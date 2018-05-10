@@ -20,7 +20,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 
 import edu.ucsb.ece.ece150.maskme.camera.GraphicOverlay;
@@ -106,9 +105,9 @@ class FaceGraphic extends GraphicOverlay.Graphic {
 
         // TODO: Draw real time masks for a single face
         Paint paint = new Paint();
-        Bitmap eye= BitmapFactory.decodeResource(mContext.getResources(), R.drawable.smile_cry);
-        float newX = x - eye.getWidth()/2;
-        float newY = y - eye.getHeight()/2;
-        canvas.drawBitmap(eye, newX,newY, paint);
+        Bitmap mask= BitmapFactory.decodeResource(mContext.getResources(), R.drawable.smile_cry);
+        float newX = x - mask.getWidth()/2;
+        float newY = y - mask.getHeight()/2;
+        canvas.drawBitmap(mask, newX,newY, paint);
     }
 }
