@@ -15,8 +15,12 @@
  */
 package edu.ucsb.ece.ece150.maskme;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 
 import edu.ucsb.ece.ece150.maskme.camera.GraphicOverlay;
@@ -51,9 +55,11 @@ class FaceGraphic extends GraphicOverlay.Graphic {
     private volatile Face mFace;
     private int mFaceId;
     private float mFaceHappiness;
+    private Context mContext;
 
-    FaceGraphic(GraphicOverlay overlay) {
+    FaceGraphic(GraphicOverlay overlay, Context context) {
         super(overlay);
+        mContext = context;
 
         mCurrentColorIndex = (mCurrentColorIndex + 1) % COLOR_CHOICES.length;
         final int selectedColor = COLOR_CHOICES[mCurrentColorIndex];
@@ -99,6 +105,10 @@ class FaceGraphic extends GraphicOverlay.Graphic {
         float y = translateY(face.getPosition().y + face.getHeight() / 2);
 
         // TODO: Draw real time masks for a single face
-
+        Paint paint = new Paint();
+        Bitmap eye= BitmapFactory.decodeResource(mContext.getResources(), R.drawable.smile_cry);
+        float newX = x - eye.getWidth()/2;
+        float newY = y - eye.getHeight()/2;
+        canvas.drawBitmap(eye, newX,newY, paint);
     }
 }

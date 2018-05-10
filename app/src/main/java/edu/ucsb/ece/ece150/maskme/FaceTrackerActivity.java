@@ -205,25 +205,42 @@ public final class FaceTrackerActivity extends AppCompatActivity {
 
         // TODO: Create a face detector for real time face detection
         // 1. Get the application's context
+        Context context = getApplicationContext();
         //
         // 2. Create a FaceDetector object for real time detection
         //    Ref: https://developers.google.com/vision/android/face-tracker-tutorial
+        FaceDetector realTimedetector = new FaceDetector.Builder(context)
+                .build();
         //
         // 3. Create a FaceDetector object for detecting faces on a static photo
+        mStaticFaceDetector = new FaceDetector.Builder(context)
+                .setTrackingEnabled(false)
+                .setLandmarkType(FaceDetector.ALL_LANDMARKS)
+                .build();
         //
         // 4. Create a GraphicFaceTrackerFactory
+        GraphicFaceTrackerFactory graphicFaceTrackerFactory = new GraphicFaceTrackerFactory();
         //
         // 5. Pass the GraphicFaceTrackerFactory to
         //    a MultiProcessor.Builder to create a MultiProcessor
+        MultiProcessor<Face> multiProcessor = new MultiProcessor.Builder<>(graphicFaceTrackerFactory).build();
         //
         // 6. Associate the MultiProcessor with the real time detector
+        realTimedetector.setProcessor(multiProcessor);
         //
         // 7. Check if the real time detector is operational
+        if (!realTimedetector.isOperational()) {
+            Log.w(TAG, "still downloading face api");
+        }
         //
         // 8. Create a camera source to capture video images from the camera,
         //    and continuously stream those images into the detector and
         //    its associated MultiProcessor
-
+        mCameraSource = new CameraSource.Builder(context, realTimedetector)
+                .setRequestedPreviewSize(640, 480)
+                .setFacing(CameraSource.CAMERA_FACING_BACK)
+                .setRequestedFps(30.0f)
+                .build();
     }
 
     /**
@@ -350,7 +367,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
 
         GraphicFaceTracker(GraphicOverlay overlay) {
             mOverlay = overlay;
-            mFaceGraphic = new FaceGraphic(overlay);
+            mFaceGraphic = new FaceGraphic(overlay, getApplicationContext());
         }
 
         /**
