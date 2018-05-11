@@ -24,6 +24,9 @@ public class CameraSourcePreview extends ViewGroup {
 
     private GraphicOverlay mOverlay;
 
+    public int mLayoutWidth;
+    public int mlayoutHeight;
+
     public CameraSourcePreview(Context context, AttributeSet attrs) {
         super(context, attrs);
         mContext = context;
@@ -129,6 +132,8 @@ public class CameraSourcePreview extends ViewGroup {
         final int layoutWidth = right - left;
         final int layoutHeight = bottom - top;
 
+        mLayoutWidth = layoutWidth;
+        mlayoutHeight = layoutHeight;
         // removed these lines so that preview doesn't have grey spacing
         // see https://github.com/googlesamples/android-vision/issues/23
         /*

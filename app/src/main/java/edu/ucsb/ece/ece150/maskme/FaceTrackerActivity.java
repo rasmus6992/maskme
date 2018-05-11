@@ -18,6 +18,7 @@ import android.util.SparseArray;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -31,7 +32,6 @@ import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * Activity for the face tracker app.  This app detects faces with the rear facing camera, and draws
@@ -95,6 +95,8 @@ public final class FaceTrackerActivity extends AppCompatActivity {
                                 if (orientation == Configuration.ORIENTATION_PORTRAIT){
                                     rotateImage();
                                 }
+                                // resize the image to fit the layout
+                                resizeImage();
                                 mImageView.setImageBitmap(mCapturedImage);
                             }
                         });
@@ -161,12 +163,24 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         }
     }
 
+    // resize the image to fit the layout
+    private void resizeImage(){
+        int width = mCapturedImage.getWidth();
+        int height = mCapturedImage.getHeight();
+        float scaleWidth = ((float) mPreview.mLayoutWidth) / width;
+        float scaleHeight = ((float) mPreview.mlayoutHeight) / height;
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleWidth, scaleHeight);
+        mCapturedImage = Bitmap.createBitmap(mCapturedImage, 0, 0, width, height, matrix, false);
+    }
+
     // rotate the image by angle
     private void rotateImage(){
         Matrix matrix = new Matrix();
         matrix.postRotate(90);
         mCapturedImage = Bitmap.createBitmap(mCapturedImage, 0, 0, mCapturedImage.getWidth(), mCapturedImage.getHeight(),
                 matrix, true);
+
     }
 
     private void detectStaticFaces(Bitmap inputImage){
@@ -254,7 +268,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         //    and continuously stream those images into the detector and
         //    its associated MultiProcessor
         mCameraSource = new CameraSource.Builder(context, realTimeDetector)
-                .setRequestedPreviewSize(640, 480)
+                .setRequestedPreviewSize(800, 480)
                 .setFacing(CameraSource.CAMERA_FACING_BACK)
                 .setRequestedFps(30.0f)
                 .build();
