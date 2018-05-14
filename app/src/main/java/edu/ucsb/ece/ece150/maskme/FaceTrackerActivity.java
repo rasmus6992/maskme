@@ -16,6 +16,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.util.SparseArray;
+import android.view.Surface;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -91,11 +92,23 @@ public final class FaceTrackerActivity extends AppCompatActivity {
                             @Override
                             public void onPictureTaken(byte[] data) {
                                 mCapturedImage = BitmapFactory.decodeByteArray(data, 0, data.length);
-                                // check orientation, if it's portrait, rotate the image
-                                int orientation = getResources().getConfiguration().orientation;
-                                if (orientation == Configuration.ORIENTATION_PORTRAIT){
-                                    rotateImage();
+                                int degree = 0;
+                                switch (getWindowManager().getDefaultDisplay().getRotation()) {
+                                    case Surface.ROTATION_0:
+                                        degree = 90;
+                                        break;
+                                    case Surface.ROTATION_90:
+                                        degree = 0;
+                                        break;
+                                    case Surface.ROTATION_180:
+                                        degree = 270;
+                                        break;
+                                    case Surface.ROTATION_270:
+                                        degree = 180;
+                                        break;
                                 }
+                                // rotate the image by appropriate degree
+                                rotateImage(degree);
                                 // resize the image to fit the layout
                                 resizeImage();
                                 mImageView.setImageBitmap(mCapturedImage);
@@ -190,10 +203,10 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         mCapturedImage = Bitmap.createBitmap(mCapturedImage, 0, 0, width, height, matrix, false);
     }
 
-    // rotate the image by angle
-    private void rotateImage(){
+    // rotate the image by given degree
+    private void rotateImage(int degree){
         Matrix matrix = new Matrix();
-        matrix.postRotate(90);
+        matrix.postRotate(degree);
         mCapturedImage = Bitmap.createBitmap(mCapturedImage, 0, 0, mCapturedImage.getWidth(), mCapturedImage.getHeight(),
                 matrix, true);
 
