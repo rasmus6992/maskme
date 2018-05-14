@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -151,7 +152,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         });
 
         mImageView = new MaskedImageView(getApplicationContext());
-        mImageView.setScaleType(ImageView.ScaleType.FIT_XY);
+        mImageView.setScaleType(ImageView.ScaleType.FIT_START);
 
         // Check for the camera permission before accessing the camera.  If the
         // permission is not granted yet, request permission.
@@ -161,6 +162,21 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         } else {
             requestCameraPermission();
         }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        // restart the camera
+        mPreview.stop();
+        createCameraSource();
+        startCameraSource();
+
+        if (buttonsMode == ButtonsMode.BACK_MASK_LUCKY){
+            mImageView.setBackgroundColor(Color.BLACK);
+        }
+
     }
 
     // resize the image to fit the layout

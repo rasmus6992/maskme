@@ -33,6 +33,7 @@
             android:icon="@drawable/icon"
             android:label="MaskMe"
             android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:configChanges="orientation|screenSize"
             android:screenOrientation="fullSensor">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
