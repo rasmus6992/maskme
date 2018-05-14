@@ -6,13 +6,6 @@
     android:layout_height="wrap_content"
     tools:context="edu.ucsb.ece.ece150.maskme.FaceTrackerActivity">
 
-    <Button
-        android:id="@+id/camera_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:text="Take Picture" />
 
     <FrameLayout
         android:layout_width="wrap_content"
@@ -46,25 +39,41 @@
                 android:layout_alignWithParentIfMissing="true" />
         
         </edu.ucsb.ece.ece150.maskme.camera.CameraSourcePreview>
+
+        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="horizontal"
+            >
+        <Button
+            android:id="@+id/left_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:text="Preview"
+            android:background="#20000000"/>
+
+
+        <Button
+            android:id="@+id/camera_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Take Picture"
+            android:background="#20000000"/>
+
+        <Button
+            android:id="@+id/right_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lucky!"
+            android:layout_alignParentEnd="true"
+            android:background="#20000000"/>
+        </RelativeLayout>
     
     </FrameLayout>
 
-    <Button
-        android:id="@+id/left_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:text="Preview" />
 
-    <Button
-        android:id="@+id/right_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Lucky!"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
 
 </RelativeLayout>

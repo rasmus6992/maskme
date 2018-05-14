@@ -268,7 +268,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         //    and continuously stream those images into the detector and
         //    its associated MultiProcessor
         mCameraSource = new CameraSource.Builder(context, realTimeDetector)
-                .setRequestedPreviewSize(800, 480)
+                .setRequestedPreviewSize(850, 480)
                 .setFacing(CameraSource.CAMERA_FACING_BACK)
                 .setRequestedFps(30.0f)
                 .build();
