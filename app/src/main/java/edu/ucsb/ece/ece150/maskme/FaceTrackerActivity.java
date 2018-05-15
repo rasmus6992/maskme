@@ -112,6 +112,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
                                 // resize the image to fit the layout
                                 resizeImage();
                                 mImageView.setImageBitmap(mCapturedImage);
+                                Toast.makeText(getApplicationContext(), "Photo captured", Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
