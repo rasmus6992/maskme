@@ -132,25 +132,25 @@ public class CameraSourcePreview extends ViewGroup {
         final int layoutWidth = right - left;
         final int layoutHeight = bottom - top;
 
-        mLayoutWidth = layoutWidth;
-        mlayoutHeight = layoutHeight;
         // removed these lines so that preview doesn't have grey spacing
         // see https://github.com/googlesamples/android-vision/issues/23
-        /*
+
         // Computes height and width for potentially doing fit width.
         int childWidth = layoutWidth;
         int childHeight = (int)(((float) layoutWidth / (float) width) * height);
 
         // If height is too tall using fit width, does fit height instead.
-        if (childHeight > layoutHeight) {
+        if (isPortraitMode()) {
             childHeight = layoutHeight;
             childWidth = (int)(((float) layoutHeight / (float) height) * width);
         }
-        */
+
         for (int i = 0; i < getChildCount(); ++i) {
-            getChildAt(i).layout(0, 0, layoutWidth, layoutHeight);
+            getChildAt(i).layout(0, 0, childWidth, childHeight);
         }
 
+        mLayoutWidth = childWidth;
+        mlayoutHeight = childHeight;
         try {
             startIfReady();
         } catch (IOException e) {

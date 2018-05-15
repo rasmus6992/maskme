@@ -200,7 +200,7 @@ public final class FaceTrackerActivity extends AppCompatActivity {
         float scaleHeight = ((float) mPreview.mlayoutHeight) / height;
         Matrix matrix = new Matrix();
         matrix.postScale(scaleWidth, scaleHeight);
-        mCapturedImage = Bitmap.createBitmap(mCapturedImage, 0, 0, width, height, matrix, false);
+        mCapturedImage = Bitmap.createBitmap(mCapturedImage, 0,0, width, height, matrix, false);
     }
 
     // rotate the image by given degree
