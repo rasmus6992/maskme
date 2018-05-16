@@ -1,6 +1,6 @@
 # maskme
 
-Maskme is an android app that uses Google's mobile vision api to recongize faces from camera streams and mask them with face masks. It supports both staic face mask(mask a photo) or face mask on camera feeds.
+Maskme is an android app that uses Google's mobile vision api to recongize faces from camera streams and mask them with face masks. It supports both static face mask(mask a photo) or face mask on camera feeds.
 
 ## Screenshots
 Some screenshots and demo of app running  
